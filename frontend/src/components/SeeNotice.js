@@ -22,7 +22,7 @@ const SeeNotice = () => {
         }
         else {
             // Dispatch action to get all notices for the school
-            dispatch(getAllNotices(currentUser.school._id, "Notice"));
+            dispatch(getAllNotices((currentUser.school && currentUser.school._id) ? currentUser.school._id : currentUser.school, "Notice"));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch]);

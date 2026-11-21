@@ -78,7 +78,7 @@ const Homepage = () => {
           </StyledPaper>
         </Grid>
       </Grid>
-      <Footer>&copy; 2025 Edu-365. All rights reserved.</Footer> {/* Footer */}
+      <Footer>&copy; 2025 KIPS-SMS. All rights reserved.</Footer> {/* Footer */}
 
     </StyledContainer>
   );

@@ -1,0 +1,52 @@
+import React from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import DashboardShell from '../../components/DashboardShell';
+import ClassTeacherHomePage from './ClassTeacherHomePage';
+import MyClassPage from './MyClassPage';
+import MyStudentsPage from './MyStudentsPage';
+import AssessmentsPage from '../admin/assessmentRelated/AssessmentsPage';
+import MarkEntryPage from '../admin/assessmentRelated/MarkEntryPage';
+import ResultPage from '../admin/resultRelated/ResultPage';
+import SubjectResultPage from '../admin/resultRelated/SubjectResultPage';
+import ReportCardsPage from '../admin/reportRelated/ReportCardsPage';
+import ReportCardDetailPage from '../admin/reportRelated/ReportCardDetailPage';
+import HomeIcon from '@mui/icons-material/Home';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+
+const sidebarItems = [
+  { label: 'Dashboard',    to: '/class-teacher/dashboard',   icon: HomeIcon },
+  { type: 'subheader', label: 'My Class' },
+  { label: 'My Class',     to: '/class-teacher/my-class',    icon: PeopleAltIcon },
+  { label: 'My Students',  to: '/class-teacher/my-students', icon: PeopleAltIcon },
+  { type: 'subheader', label: 'Assessment' },
+  { label: 'Assessments',  to: '/class-teacher/assessments', icon: AssignmentIcon },
+  { label: 'Mark Entry',   to: '/class-teacher/mark-entry',  icon: EditNoteIcon },
+  { label: 'Results',      to: '/class-teacher/results',     icon: TableChartIcon },
+  { type: 'divider' },
+  { type: 'subheader', label: 'Account' },
+  { label: 'Profile',      to: '/class-teacher/profile',     icon: AccountCircleOutlinedIcon },
+  { label: 'Logout',       to: '/logout',                    icon: ExitToAppIcon },
+];
+
+const ClassTeacherDashboard = () => (
+  <DashboardShell sidebarItems={sidebarItems}>
+    <Routes>
+      <Route index element={<Navigate to="/class-teacher/dashboard" replace />} />
+      <Route path="dashboard"        element={<ClassTeacherHomePage />} />
+      <Route path="my-class"         element={<MyClassPage />} />
+      <Route path="my-students"      element={<MyStudentsPage />} />
+      <Route path="assessments"      element={<AssessmentsPage />} />
+      <Route path="mark-entry/:id"   element={<MarkEntryPage />} />
+      <Route path="results"          element={<ResultPage />} />
+      <Route path="results/subjects" element={<SubjectResultPage />} />
+      <Route path="*"                element={<Navigate to="/class-teacher/dashboard" replace />} />
+    </Routes>
+  </DashboardShell>
+);
+
+export default ClassTeacherDashboard;

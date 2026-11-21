@@ -1,174 +1,43 @@
-import * as React from "react";
-import {
-  Divider,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
-  Tooltip,
-} from "@mui/material";
-import { Link, useLocation } from "react-router-dom";
+import React from 'react';
+import Sidebar from '../../components/Sidebar';
+import HomeIcon from '@mui/icons-material/Home';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DateRangeIcon from '@mui/icons-material/DateRange';
+import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ArticleIcon from '@mui/icons-material/Article';
+import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import SettingsIcon from '@mui/icons-material/Settings';
 
-import HomeIcon from "@mui/icons-material/Home";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import AnnouncementOutlinedIcon from "@mui/icons-material/AnnouncementOutlined";
-import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
-import SupervisorAccountOutlinedIcon from "@mui/icons-material/SupervisorAccountOutlined";
-import ReportIcon from "@mui/icons-material/Report";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+const items = [
+  { label: 'Home', to: '/admin/dashboard', icon: HomeIcon },
+  { type: 'subheader', label: 'Academic' },
+  { label: 'Academic Years', to: '/admin/academic-years', icon: CalendarMonthIcon },
+  { label: 'Terms', to: '/admin/terms', icon: DateRangeIcon },
+  { label: 'Classes', to: '/admin/classes', icon: ClassOutlinedIcon },
+  { label: 'Students', to: '/admin/students', icon: PeopleAltIcon },
+  { label: 'Enrollments', to: '/admin/enrollments', icon: AssignmentIndIcon },
+  { label: 'Subjects', to: '/admin/subjects', icon: MenuBookIcon },
+  { label: 'Teacher Assignments', to: '/admin/teacher-assignments', icon: AssignmentIcon },
+  { label: 'Class Teachers', to: '/admin/class-teacher-assignments', icon: SupervisorAccountIcon },
+  { label: 'Assessments', to: '/admin/assessments', icon: AssignmentIcon },
+  { label: 'Results', to: '/admin/results', icon: TableChartIcon },
+  { label: 'Report Cards', to: '/admin/reports', icon: ArticleIcon },
+  { type: 'divider' },
+  { type: 'subheader', label: 'Settings' },
+  { label: 'School Header', to: '/admin/school-header', icon: SettingsIcon },
+  { type: 'divider' },
+  { type: 'subheader', label: 'Account' },
+  { label: 'Profile', to: '/admin/profile', icon: AccountCircleOutlinedIcon },
+  { label: 'Logout', to: '/logout', icon: ExitToAppIcon },
+];
 
-const SideBar = () => {
-  // Get the current location from react-router-dom
-  const location = useLocation();
-  return (
-    <>
-      <React.Fragment>
-        {/* Home button */}
-        <ListItemButton component={Link} to="/">
-          <Tooltip title={"Home"}> {/* Tooltip for the Home button */}
-            <ListItemIcon>
-              <HomeIcon
-                color={
-                  location.pathname === ("/" || "/Admin/dashboard")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Home" /> {/* Text for the Home button */}
-        {/* Classes button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/classes">
-          <Tooltip title={"Classes"}>
-            <ListItemIcon>
-              <ClassOutlinedIcon
-                color={
-                  location.pathname.startsWith("/Admin/classes")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Classes" /> {/* Text for the Classes button */}
-        {/* Subjects button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/subjects">
-          <Tooltip title={"Subjects"}>
-            <ListItemIcon>
-              <AssignmentIcon
-                color={
-                  location.pathname.startsWith("/Admin/subjects")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Subjects" /> {/* Text for the Subjects button */}
-        {/* Teachers button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/teachers">
-          <Tooltip title={"Teachers"}>
-            <ListItemIcon>
-              <SupervisorAccountOutlinedIcon
-                color={
-                  location.pathname.startsWith("/Admin/teachers")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Teachers" /> {/* Text for the Teachers button */}
-        {/* Students button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/students">
-          <Tooltip title={"Students"}>
-            <ListItemIcon>
-              <PersonOutlineIcon
-                color={
-                  location.pathname.startsWith("/Admin/students")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Students" /> {/* Text for the Students button */}
-        {/* Notices button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/notices">
-          <Tooltip title={"Notice"}>
-            <ListItemIcon>
-              <AnnouncementOutlinedIcon
-                color={
-                  location.pathname.startsWith("/Admin/notices")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Notices" /> {/* Text for the Notices button */}
-        {/* Complains button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/Admin/complains">
-          <Tooltip title={"Complains"}>
-            <ListItemIcon>
-              <ReportIcon
-                color={
-                  location.pathname.startsWith("/Admin/complains")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Complains" /> {/* Text for the Complains button */}
-        </ListItemButton>
-      </React.Fragment>
-      <Divider sx={{ my: 1 }} />
-      <React.Fragment>
-        {/* User section */}
-        <ListSubheader component="div" inset>
-          User {/* User section header */}
-        </ListSubheader>
-        <ListItemButton component={Link} to="/Admin/profile">
-          <Tooltip title={"Profile"}>
-            <ListItemIcon>
-              <AccountCircleOutlinedIcon
-                color={
-                  location.pathname.startsWith("/Admin/profile")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Profile" /> {/* Text for the Profile button */}
-        {/* Logout button */}
-        </ListItemButton>
-        <ListItemButton component={Link} to="/logout">
-          <Tooltip title={"Logout"}>
-            <ListItemIcon>
-              <ExitToAppIcon
-                color={
-                  location.pathname.startsWith("/logout")
-                    ? "primary"
-                    : "inherit"
-                }
-              />
-            </ListItemIcon>
-          </Tooltip> {/* Display the tooltip */}
-          <ListItemText primary="Logout" /> {/* Text for the Logout button */}
-        </ListItemButton>
-      </React.Fragment>
-    </>
-  );
-};
+const AdminSideBar = () => <Sidebar items={items} />;
 
-export default SideBar;
+export default AdminSideBar;

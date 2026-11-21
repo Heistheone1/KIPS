@@ -20,7 +20,7 @@ export const getAllSclasses = (id, address) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}List/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/${address}List/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {
@@ -41,7 +41,7 @@ export const getClassStudents = (id) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Sclass/Students/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/Sclass/Students/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {
@@ -62,7 +62,7 @@ export const getClassDetails = (id, address) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`
     );
     // Dispatch detailsSuccess with the retrieved data
     if (result.data) {
@@ -81,7 +81,7 @@ export const getSubjectList = (id, address) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {
@@ -102,7 +102,7 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/FreeSubjectList/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/FreeSubjectList/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {
@@ -123,7 +123,7 @@ export const getSubjectDetails = (id, address) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/${address}/${id}`
     );
     // Dispatch getSubDetailsSuccess with the retrieved data
     if (result.data) {

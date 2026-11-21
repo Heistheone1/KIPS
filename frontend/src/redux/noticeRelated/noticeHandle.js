@@ -10,7 +10,7 @@ export const getAllNotices = (id, address) => async (dispatch) => {
   try {
     // Make an asynchronous GET request to the specified URL
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/${address}List/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/${address}List/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {

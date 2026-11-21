@@ -77,7 +77,9 @@ const getStudents = async (req, res) => {
         // If students are found, modify the array to remove passwords
         if (students.length > 0) {
             let modifiedStudents = students.map((student) => {
-                return { ...student._doc, password: undefined };
+                const s = student.toObject ? student.toObject() : { ...student };
+                delete s.password;
+                return s;
             });
             res.send(modifiedStudents);
         } 
@@ -153,7 +155,7 @@ const updateStudent = async (req, res) => {
         // If a new password is provided, hash it before updating
         if (req.body.password) {
             const salt = await bcrypt.genSalt(10)
-            res.body.password = await bcrypt.hash(res.body.password, salt)
+            req.body.password = await bcrypt.hash(req.body.password, salt)
         }
         // Update the student's information
         let result = await Student.findByIdAndUpdate(req.params.id,

@@ -1,212 +1,87 @@
-// Import necessary modules and components
-import { useEffect, useState } from 'react';
-import { IconButton, Box, Menu, MenuItem, ListItemIcon, Tooltip } from '@mui/material';
-import DeleteIcon from "@mui/icons-material/Delete";
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { deleteUser } from '../../../redux/userRelated/userHandle';
+import { Box, Typography, Tooltip, IconButton, Stack } from '@mui/material';
+import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { getAllSclasses } from '../../../redux/sclassRelated/sclassHandle';
-import { BlueButton, GreenButton, ButtonContainer } from '../../../components/buttonStyles';
-import TableTemplate from '../../../components/TableTemplate';
+import { deleteUser } from '../../../redux/userRelated/userHandle';
+import PageLayout, { StatusBadge } from '../../../components/academic/PageLayout';
 
-import SpeedDialIcon from '@mui/material/SpeedDialIcon';
-import PostAddIcon from '@mui/icons-material/PostAdd';
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import AddCardIcon from '@mui/icons-material/AddCard';
-// eslint-disable-next-line no-unused-vars
-import styled from 'styled-components';
-import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
-import Popup from '../../../components/Popup';
+const ACCENT = '#0d9488';
+const ACCENT_BG = '#f0fdfa';
 
-// Define the ShowClasses component
 const ShowClasses = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { sclassesList, loading } = useSelector((s) => s.sclass);
+  const { currentUser } = useSelector((s) => s.user);
 
-  const { sclassesList, loading, error, getresponse } = useSelector((state) => state.sclass);
-  const { currentUser } = useSelector(state => state.user)
-
-  const adminID = currentUser._id
-
-  // Fetch all classes on component mount
   useEffect(() => {
-    dispatch(getAllSclasses(adminID, "Sclass"));
-  }, [adminID, dispatch]);
+    dispatch(getAllSclasses(currentUser._id, 'Sclass'));
+  }, [currentUser._id, dispatch]);
 
-  if (error) {
-    console.log(error)
-  }
-
-  const [showPopup, setShowPopup] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [message, setMessage] = useState("");
-
-  // Handle deletion of a class
-  const deleteHandler = (deleteID, address) => {
-    console.log(deleteID);
-    console.log(address);
-    dispatch(deleteUser(deleteID, address))
-      .then(() => {
-        dispatch(getAllSclasses(adminID, "Sclass"));
-      })
-  }
-
-  // Define columns for the classes table
-  const sclassColumns = [
-    { id: 'name', label: 'Class Name', minWidth: 170 },
-  ]
-
-  // Map class data to table rows
-  const sclassRows = sclassesList && sclassesList.length > 0 && sclassesList.map((sclass) => {
-      return {
-      name: sclass.sclassName,
-      id: sclass._id,
-    };
-  })
-
-  const SclassButtonHaver = ({ row }) => {
-    const actions = [
-      { icon: <PostAddIcon />, name: 'Add Subjects', action: () => navigate("/Admin/addsubject/" + row.id) },
-      { icon: <PersonAddAlt1Icon />, name: 'Add Student', action: () => navigate("/Admin/class/addstudents/" + row.id) },
-    ];
-    // Render buttons for each row in the classes table
-    return (
-      <ButtonContainer>
-        <IconButton onClick={() => deleteHandler(row.id, "Sclass")} color="secondary">
-          <DeleteIcon color="error" />
-        </IconButton>
-        <BlueButton variant="contained"
-          onClick={() => navigate("/Admin/classes/class/" + row.id)}>
-          View
-        </BlueButton>
-        <ActionMenu actions={actions} />
-      </ButtonContainer>
-    );
+  const handleDelete = (id) => {
+    dispatch(deleteUser(id, 'Sclass')).then(() => {
+      dispatch(getAllSclasses(currentUser._id, 'Sclass'));
+    });
   };
 
-  // Define the ActionMenu component for additional actions
-  const ActionMenu = ({ actions }) => {
-    const [anchorEl, setAnchorEl] = useState(null);
+  const rows = (sclassesList || []).map((s) => ({ ...s, name: s.sclassName, _id: s._id }));
 
-    const open = Boolean(anchorEl);
-
-    const handleClick = (event) => {
-      // Handle click on the action menu button
-      setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-      setAnchorEl(null);
-    };
-    return (
-      <>
-        <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
-          <Tooltip title="Add Students & Subjects">
-            <IconButton
-              onClick={handleClick}
-              size="small"
-              sx={{ ml: 2 }}
-              aria-controls={open ? 'account-menu' : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? 'true' : undefined}
-            >
-              <h5>Add</h5>
-              <SpeedDialIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        <Menu
-          anchorEl={anchorEl}
-          id="account-menu"
-          open={open}
-          onClose={handleClose}
-          onClick={handleClose}
-          PaperProps={{
-            elevation: 0,
-            sx: styles.styledPaper,
-          }}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-        >
-          {actions.map((action) => (
-            <MenuItem onClick={action.action}>
-              <ListItemIcon fontSize="small">
-                {action.icon}
-              </ListItemIcon>
-              {action.name}
-            </MenuItem>
-          ))}
-        </Menu>
-      </>
-    );
-  }
-
-  // Define actions for the classes section speed dial
-  const actions = [
+  const columns = [
     {
-      icon: <AddCardIcon color="primary" />, name: 'Add New Class',
-      action: () => navigate("/Admin/addclass")
+      key: 'name', label: 'Class Name',
+      render: (r) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: ACCENT_BG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ClassOutlinedIcon sx={{ fontSize: 16, color: ACCENT }} />
+          </Box>
+          <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}>{r.name}</Typography>
+        </Box>
+      ),
     },
     {
-      icon: <DeleteIcon color="error" />, name: 'Delete All Classes',
-      action: () => deleteHandler(adminID, "Sclasses")
+      key: 'school', label: 'School',
+      render: (r) => (
+        <Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>{r.school?.schoolName || '—'}</Typography>
+      ),
     },
   ];
 
-  // Render the component
   return (
-    <>
-      {loading ?
-        <div>Loading...</div>
-        :
-        <>
-          {getresponse ?
-            <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-              <ButtonContainer>
-                <GreenButton variant="contained" onClick={() => navigate("/Admin/addclass")}>
-                   Add Class
-                </GreenButton>
-              </ButtonContainer>
-            </Box>
-            :
-            <>
-              {Array.isArray(sclassesList) && sclassesList.length > 0 &&
-                <TableTemplate buttonHaver={SclassButtonHaver} columns={sclassColumns} rows={sclassRows} />
-              }
-              <SpeedDialTemplate actions={actions} />
-            </>}
-        </>
-      }
-      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-
-    </>
+    <PageLayout
+      title="Classes"
+      subtitle="Manage school classes and their students"
+      icon={ClassOutlinedIcon}
+      iconColor={ACCENT}
+      iconBg={ACCENT_BG}
+      onAdd={() => navigate('/Admin/addclass')}
+      canAdd
+      addLabel="Add Class"
+      columns={columns}
+      rows={rows}
+      loading={loading}
+      emptyMessage="No classes yet. Create one to get started."
+      extraActions={(row) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="View">
+            <IconButton size="small" onClick={() => navigate('/Admin/classes/class/' + row._id)}
+              sx={{ color: ACCENT, '&:hover': { bgcolor: ACCENT_BG } }}>
+              <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton size="small" onClick={() => handleDelete(row._id)}
+              sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}>
+              <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )}
+    />
   );
 };
 
-// Export the ShowClasses component
 export default ShowClasses;
-
-const styles = {
-  styledPaper: {
-    overflow: 'visible',
-    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-    mt: 1.5,
-    '& .MuiAvatar-root': {
-      width: 32,
-      height: 32,
-      ml: -0.5,
-      mr: 1,
-    },
-    '&:before': {
-      content: '""',
-      display: 'block',
-      position: 'absolute',
-      top: 0,
-      right: 14,
-      width: 10,
-      height: 10,
-      bgcolor: 'background.paper',
-      transform: 'translateY(-50%) rotate(45deg)',
-      zIndex: 0,
-    },
-  }
-}

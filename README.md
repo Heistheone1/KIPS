@@ -1,5 +1,5 @@
 <h1 align="center">
-    Edu-365
+    KIPS-SMS
 </h1>
 
 <h3 align="center">
@@ -10,9 +10,9 @@ Access detailed records, review marks, and foster open communication to empower 
 </h3>
 
 <br>
-LIVE LINK: https://school-management-system-hazel-eta.vercel.app
+LIVE LINK: https://KIPS.co.rw
 
-BACKEND: https://edu-365.vercel.app
+BACKEND: https://api.KIPS.co.rw
 
 **VIDEO PRESENTATION:** https://drive.google.com/file/d/1eh5Lf0SXdkLZWKr_I-B0aeFZnnZoh4e7/view?usp=drive_link
 # sample login for testing 
@@ -45,7 +45,7 @@ password: 12345
 
 ## About
 
-The School Management System is a cutting-edge, web-based application built on the powerful MERN (MongoDB, Express.js, React.js, Node.js) stack. Engineered for maximum efficiency, it revolutionizes school administration by:
+The School Management System is a cutting-edge, web-based application built on the powerful PERN (PostgreSQL, Express.js, React.js, Node.js) stack. Engineered for maximum efficiency, it revolutionizes school administration by:
 
 - **Centralizing and Automating Administrative Tasks:**  
   Manage student and teacher enrollment, class creation, and scheduling from one unified dashboard.
@@ -69,7 +69,7 @@ The School Management System is a cutting-edge, web-based application built on t
 
 3. **Robust Back-End Integration:**  
    - Node.js and Express.js powering efficient server-side operations  
-   - MongoDB’s flexible, document-based storage adapts to diverse data structures  
+   - PostgreSQL's robust relational storage adapts to diverse data structures  
    - Real-time data synchronization for up-to-the-minute information
 
 4. **Enhanced Security:**  
@@ -137,37 +137,74 @@ In essence, our School Management System empowers schools to streamline administ
 
 - **Frontend:** React.js, Material UI, Redux  
 - **Backend:** Node.js, Express.js  
-- **Database:** MongoDB
+- **Database:** PostgreSQL (document storage in a single `documents` JSONB table via the built-in ODM; schema auto-created on first connection)  
+
+> Note: The phase-based tests under `backend/tests` were written for the legacy MongoDB/Mongoose implementation and are not runnable against the PostgreSQL build.
 
 ## Installation
 
-Clone the repository:
-```sh
-git clone https://github.com/daniel-ndeto/school-management-system.git
+### Prerequisites
 
+- Node.js 18+
+- PostgreSQL 14+
+
+### Setup Database
+
+Create the database (tables are created automatically on first backend start):
+
+```sh
+psql -U postgres -c "CREATE DATABASE kips_sms;"
+```
 
 ### Setup Backend
+
 1. Open a terminal and navigate to the `backend` folder:
-   
+   ```sh
    cd backend
    npm install
+   ```
+
+2. Copy `.env.example` to `.env` and set at least:
+   ```sh
+   PORT=5001
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/kips_sms
+   JWT_SECRET=replace_with_a_long_random_secret_string
+   COOKIE_SECRET=replace_with_a_long_random_cookie_secret
+   ```
+   *(Port `5001` is used because PostgreSQL 18 on this machine already listens on `5000`. Change `PORT` if needed.)*
+
+3. Seed the first school and admin account:
+   ```sh
+   npm run seed
+   ```
+   Default login (configurable through the `SEED_*` variables in `.env`):
+   - Email: `admin@kipsschool.ac`
+   - Password: `KipsAdmin2024!`
+
+4. Start the API:
+   ```sh
    npm start
    ```
-2. Create a `.env` file in the `backend` folder and add:
-   ```sh
-   MONGO_URL = mongodb://127.0.0.1/school
-   ```
-   *(Replace with your MongoDB Atlas link if necessary.)*
+   The backend runs at `http://localhost:5001`; health check: `GET /health`.
 
 ### Setup Frontend
+
 1. Open another terminal and navigate to the `frontend` folder:
    ```sh
    cd frontend
    npm install
+   ```
+
+2. Ensure `frontend/.env` points at the API:
+   ```sh
+   REACT_APP_BASE_URL=http://localhost:5001
+   ```
+
+3. Start the frontend:
+   ```sh
    npm start
    ```
-2. Open your browser and navigate to `localhost:3000` for the frontend.  
-   The backend API will run at `localhost:5000`.
+   Open `http://localhost:3000`. The backend API runs at `http://localhost:5001`.
 
 ## Error Solution
 
@@ -184,7 +221,7 @@ If you encounter a sign-up error (e.g., a network error or endless loading):
 2. **Update Base URL in Code:**
    - In `frontend/src/redux/userRelated/userHandle.js`, add after the import statements:
      ```javascript
-     const REACT_APP_BASE_URL = "http://localhost:5000";
+     const REACT_APP_BASE_URL = "http://localhost:5001";
      ```
    - Replace all instances of `process.env.REACT_APP_BASE_URL` with `REACT_APP_BASE_URL` in files containing "Handle" in their names (e.g., in `teacherRelated` and other related folders).
 

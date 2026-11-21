@@ -1,125 +1,80 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const Routes = require("./routes/route.js");
+'use strict';
 
-// Load environment variables
-dotenv.config();
+require('dotenv').config();
 
-const PORT = process.env.PORT || 5000;
+const env = require('./config/env');
+const { connect } = require('./config/database');
+
+const express = require('express');
+const {
+  helmetMiddleware,
+  cookieMiddleware,
+  corsMiddleware,
+  apiRateLimiter,
+} = require('./middleware/security');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const schoolRoutes = require('./routes/schoolRoutes');
+const academicRoutes = require('./routes/academicRoutes');
+const assessmentRoutes = require('./routes/assessmentRoutes');
+const resultRoutes = require('./routes/resultRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const legacyRoutes = require('./routes/route');
+
 const app = express();
 
-// Parse JSON bodies
-app.use(express.json({ limit: "10mb" }));
+// Security headers
+app.use(helmetMiddleware);
 
-// --- CORS Configuration ---
-// Only allow your frontend’s Vercel domain
-const allowedOrigin = "https://school-management-system-hazel-eta.vercel.app";
+// CORS — must come before cookie parser and routes
+app.use(corsMiddleware);
+app.options('*', corsMiddleware);
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl) or from the specific allowed origin
-    if (!origin || origin === allowedOrigin) {
-      callback(null, true);
-    } else {
-      console.warn(`Blocked CORS for origin: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // Allow cookies/auth headers
-  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+// Cookie parser — signed cookies require COOKIE_SECRET
+app.use(cookieMiddleware);
+
+// Body parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+// General rate limiting
+app.use('/api', apiRateLimiter);
+
+// Health check
+app.get('/health', (req, res) => res.json({ status: 'ok', env: env.NODE_ENV }));
+
+// Domain routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/schools', schoolRoutes);
+app.use('/api', academicRoutes);
+app.use('/api', assessmentRoutes);
+app.use('/api', resultRoutes);
+app.use('/api', reportRoutes);
+app.use('/api', searchRoutes);
+app.use('/api', legacyRoutes);
+
+// 404 handler
+app.use(notFound);
+
+// Centralized error handler
+app.use(errorHandler);
+
+const start = async () => {
+  await connect();
+  app.listen(env.PORT, () => {
+    console.log(`KIPS-SMS backend running on port ${env.PORT} [${env.NODE_ENV}]`);
+  });
 };
 
-// 1️⃣ Handle preflight requests for all routes
-app.options("*", cors(corsOptions));
-
-// 2️⃣ Apply CORS middleware to all other requests
-app.use(cors(corsOptions));
-// --- End CORS Configuration ---
-
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
-// Root endpoint
-app.get("/", (req, res) => {
-  res.send("Welcome to the API!");
-});
-
-// Mount your routes
-app.use("/", Routes);
-
-// Error handler (catches CORS and other errors)
-app.use((err, req, res, next) => {
-  if (err.message === "Not allowed by CORS") {
-    return res.status(403).json({ message: "Forbidden: Origin not allowed" });
-  }
-  console.error(err.stack);
-  res.status(500).send("Internal Server Error");
-});
-
-module.exports = app;
-
-// If run directly (not on Vercel), start the server
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+  start().catch((err) => {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
   });
 }
 
-
-// // index.js
-// const express = require("express");
-// const cors = require("cors");
-// const mongoose = require("mongoose");
-// const dotenv = require("dotenv");
-// const Routes = require("./routes/route.js");
-
-// // Load environment variables from .env
-// dotenv.config();
-
-// const PORT = process.env.PORT || 5000;
-
-// // Create Express app
-// const app = express();
-
-// // Middleware for parsing JSON bodies
-// app.use(express.json({ limit: "10mb" }));
-
-
-// // Allow all origins (for development)
-// app.use(cors());
-
-// // Configure CORS options (production restricts to your specified domain)
-// // const corsOptions = {
-// //   origin: "https://school-management-system-haziel.eta.vercel.app",
-// //   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-// //   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-// //   credentials: true
-// // };
-// // app.use(cors(corsOptions));
-
-// // Connect to MongoDB
-// mongoose
-//   .connect(process.env.MONGO_URL, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true,
-//   })
-//   .then(() => console.log("Connected to MongoDB"))
-//   .catch((err) => console.log("NOT CONNECTED TO NETWORK", err));
-
-// // Define a welcome route for the root path
-// app.get("/", (req, res) => {
-//   res.send("Welcome to the API!");
-// });
-
-// // Mount other routes from your Routes module
-// app.use("/", Routes);
-
-// // Export the Express app for Vercel (or other hosting platforms)
-// module.exports = app;
+module.exports = app;

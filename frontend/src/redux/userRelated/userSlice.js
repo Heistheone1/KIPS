@@ -1,129 +1,190 @@
-// Import the createSlice function from the @reduxjs/toolkit library
 import { createSlice } from '@reduxjs/toolkit';
 
+const VALID_ROLES = ['ADMIN', 'DOS', 'CLASS_TEACHER', 'TEACHER', 'STUDENT'];
+
+// Only non-credential user info is persisted in sessionStorage
+// The authentication credential (JWT) lives exclusively in the HttpOnly cookie
+// managed by the browser — it is never accessible to JavaScript
+const storedUser = (() => {
+  try { return JSON.parse(sessionStorage.getItem('kips_user')) || null; } catch { return null; }
+})();
+
 const initialState = {
-    status: 'idle',
-    userDetails: [],
-    tempDetails: [],
-    loading: false,
-    currentUser: JSON.parse(localStorage.getItem('user')) || null,
-    currentRole: (JSON.parse(localStorage.getItem('user')) || {}).role || null,
-    error: null,
-    response: null,
-    darkMode: true
+  status: 'idle',
+  currentUser: storedUser,
+  currentRole: storedUser?.role || null,
+  loading: false,
+  error: null,
+  response: null,
+  users: [],
+  userSaveSuccess: false,
+  profileUpdated: false,
+  passwordChanged: false,
+  profileError: null,
+  passwordError: null,
 };
 
-// Create a slice of the Redux store for user-related data
 const userSlice = createSlice({
-    name: 'user',
-    initialState,
-    reducers: {
-        
-        authRequest: (state) => {
-            state.status = 'loading';
-            // Set the status to 'loading' when an authentication request is made
-        },
-
-        underControl: (state) => {
-            state.status = 'idle';
-            state.response = null;
-            // Reset the status to 'idle' and clear the response
-        },
-
-        stuffAdded: (state, action) => {
-            state.status = 'added';
-            state.response = null;
-            state.error = null;
-            state.tempDetails = action.payload; // Store temporary details
-            // Set the status to 'added', clear the response and error, and store temporary details
-        },
-
-        authSuccess: (state, action) => {
-            state.status = 'success';
-            state.currentUser = action.payload;
-            state.currentRole = action.payload.role;
-            localStorage.setItem('user', JSON.stringify(action.payload)); // Store user data in local storage
-            state.response = null;
-            state.error = null;
-            // Set the status to 'success', store user data, set the current role, clear the response and error
-        },
-
-        authFailed: (state, action) => {
-            state.status = 'failed';
-            state.response = action.payload;
-            // Set the status to 'failed' and store the response
-        },
-
-        authError: (state, action) => {
-            state.status = 'error';
-            state.error = action.payload;
-            // Set the status to 'error' and store the error
-        },
-
-        authLogout: (state) => {
-            localStorage.removeItem('user'); // Remove user data from local storage
-            state.currentUser = null;
-            state.status = 'idle';
-            state.error = null;
-            state.currentRole = null
-            // Remove user data from local storage, clear user data, reset the status, clear the error, and clear the current role
-        },
-
-        doneSuccess: (state, action) => {
-            state.userDetails = action.payload;
-            state.loading = false;
-            state.error = null;
-            state.response = null;
-            // Store user details, set loading to false, clear the error and response
-        },
-
-        getDeleteSuccess: (state) => {
-            state.loading = false;
-            state.error = null;
-            state.response = null;
-            // Set loading to false, clear the error and response
-        },
-
-        getRequest: (state) => {
-            state.loading = true;
-            // Set loading to true when a request is made
-        },
-
-        getFailed: (state, action) => {
-            state.response = action.payload;
-            state.loading = false;
-            state.error = null;
-            // Store the response, set loading to false, and clear the error
-        },
-
-        getError: (state, action) => {
-            state.loading = false;
-            state.error = action.payload.message;
-            // Set loading to false and store the error message
-        },
-
-        toggleDarkMode: (state) => {
-            state.darkMode = !state.darkMode;
-            // Toggle the dark mode state
-        }
+  name: 'user',
+  initialState,
+  reducers: {
+    authRequest: (state) => {
+      state.status = 'loading';
+      state.error = null;
+      state.response = null;
     },
+
+    authSuccess: (state, action) => {
+      const { user } = action.payload;
+      if (!VALID_ROLES.includes(user.role)) {
+        state.status = 'failed';
+        state.response = 'Invalid role received from server';
+        return;
+      }
+      state.status = 'success';
+      state.currentUser = user;
+      state.currentRole = user.role;
+      state.error = null;
+      state.response = null;
+      // Store only safe user info — NOT the authentication credential
+      sessionStorage.setItem('kips_user', JSON.stringify(user));
+    },
+
+    authFailed: (state, action) => {
+      state.status = 'failed';
+      state.response = action.payload;
+      state.loading = false;
+    },
+
+    authError: (state, action) => {
+      state.status = 'error';
+      state.error = action.payload;
+      state.loading = false;
+    },
+
+    authLogout: (state) => {
+      state.currentUser = null;
+      state.currentRole = null;
+      state.status = 'idle';
+      state.error = null;
+      state.response = null;
+      // Clear user info from sessionStorage
+      // The HttpOnly cookie is cleared by the server on POST /api/auth/logout
+      sessionStorage.removeItem('kips_user');
+    },
+
+    getRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    doneSuccess: (state, action) => {
+      state.userDetails = action.payload;
+      state.loading = false;
+      state.error = null;
+      state.response = null;
+    },
+
+    stuffAdded: (state, action) => {
+      state.loading = false;
+      state.error = null;
+      state.response = null;
+      state.status = 'added';
+    },
+
+    getFailed: (state, action) => {
+      state.response = action.payload;
+      state.loading = false;
+    },
+
+    getError: (state, action) => {
+      state.loading = false;
+      const payload = action.payload;
+      if (typeof payload === 'string') {
+        state.error = payload;
+      } else {
+        state.error = payload?.message || payload?.errors?.join(', ') || 'An error occurred';
+      }
+    },
+
+    underControl: (state) => {
+      state.status = 'idle';
+      state.response = null;
+    },
+    usersLoaded: (state, action) => {
+      state.users = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
+    userSaved: (state, action) => {
+      const saved = action.payload;
+      const idx = state.users.findIndex((u) => u._id === saved._id);
+      if (idx >= 0) state.users[idx] = saved;
+      else state.users.unshift(saved);
+      state.loading = false;
+      state.error = null;
+      state.userSaveSuccess = true;
+    },
+    resetUserSave: (state) => {
+      state.userSaveSuccess = false;
+      state.error = null;
+    },
+    profileUpdated: (state, action) => {
+      const saved = action.payload;
+      state.currentUser = saved;
+      state.currentRole = saved.role || state.currentRole;
+      state.loading = false;
+      state.error = null;
+      state.profileUpdated = true;
+      state.profileError = null;
+      // Keep sessionStorage in sync
+      try { sessionStorage.setItem('kips_user', JSON.stringify(saved)); } catch (_) {}
+    },
+    profileError: (state, action) => {
+      state.loading = false;
+      state.profileError = action.payload;
+      state.profileUpdated = false;
+    },
+    passwordChanged: (state) => {
+      state.loading = false;
+      state.error = null;
+      state.passwordChanged = true;
+      state.passwordError = null;
+    },
+    passwordError: (state, action) => {
+      state.loading = false;
+      state.passwordError = action.payload;
+      state.passwordChanged = false;
+    },
+    resetProfileStatus: (state) => {
+      state.profileUpdated = false;
+      state.profileError = null;
+      state.passwordChanged = false;
+      state.passwordError = null;
+    },
+  },
 });
 
 export const {
-    authRequest,
-    underControl,
-    stuffAdded,
-    authSuccess,
-    authFailed,
-    authError,
-    authLogout,
-    doneSuccess,
-    getDeleteSuccess,
-    getRequest,
-    getFailed,
-    getError,
-    toggleDarkMode
+  authRequest,
+  authSuccess,
+  authFailed,
+  authError,
+  authLogout,
+  getRequest,
+  doneSuccess,
+  stuffAdded,
+  getFailed,
+  getError,
+  underControl,
+  usersLoaded,
+  userSaved,
+  resetUserSave,
+  profileUpdated,
+  profileError,
+  passwordChanged,
+  passwordError,
+  resetProfileStatus,
 } = userSlice.actions;
 
-// Export the reducer function
 export const userReducer = userSlice.reducer;

@@ -1,24 +1,7 @@
-const mongoose = require("mongoose")
+'use strict';
+const odm = require('../lib/pg-odm');
 
-// Define the schema for the notice model
-const noticeSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true
-    },
-    details: {
-        type: String,
-        required: true
-    },
-    date: {
-        type: Date,
-        required: true
-    },
-    school: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'admin'
-    },
-    // Add timestamps for when the notice was created and updated
-}, { timestamps: true });
-
-module.exports = mongoose.model("notice", noticeSchema)
+module.exports = odm.defineModel('notice', {
+  collection: 'legacy_notices',
+  refs: { school: 'admin' },
+});

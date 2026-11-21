@@ -1,127 +1,200 @@
-// Import necessary modules and components
-import React, { useState } from "react";
-import { Container, Grid, Paper, Box, Typography } from "@mui/material";
-import SeeNotice from "../../components/SeeNotice";
-import CountUp from "react-countup";
-import styled from "styled-components";
-import Students from "../../assets/img1.png";
-import Lessons from "../../assets/subjects.svg";
-import Tests from "../../assets/assignment.svg";
-import Time from "../../assets/time.svg";
+import React, { useEffect, useState } from 'react';
 import {
-  getClassStudents,
-  getSubjectDetails,
-} from "../../redux/sclassRelated/sclassHandle";
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
-import addnotice from "../../assets/addnotice.jpg";
+  Box, Grid, Paper, Typography, Avatar, Divider, CircularProgress,
+  List, ListItem, ListItemAvatar, ListItemText, Chip,
+} from '@mui/material';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import StatCard from '../../components/StatCard';
+import ClassOutlinedIcon from '@mui/icons-material/ClassOutlined';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ArticleIcon from '@mui/icons-material/Article';
 
-// Define the TeacherHomePage component
+const BASE_URL = process.env.REACT_APP_BASE_URL;
+
+const LEVEL_COLORS = {
+  NURSERY: { bg: '#fce7f3', color: '#db2777' },
+  PRIMARY: { bg: '#dbeafe', color: '#2563eb' },
+};
+
 const TeacherHomePage = () => {
-  const dispatch = useDispatch();
-  const [hasData, setHasData] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const addData = () => {
-    setHasData(true);
-  };
+  const { currentUser } = useSelector((s) => s.user);
+  const firstName = currentUser?.firstName ?? 'Teacher';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Select data from the Redux store
-  const { currentUser } = useSelector((state) => state.user);
-  const { subjectDetails, sclassStudents } = useSelector(
-    (state) => state.sclass
-  );
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading]         = useState(true);
 
-  // Extract class ID and subject ID from the current user's data
-  const classID = currentUser.teachSclass?._id;
-  const subjectID = currentUser.teachSubject?._id;
-
-  // Fetch subject details and class students on component mount and when dependencies change
   useEffect(() => {
-    dispatch(getSubjectDetails(subjectID, "Subject"));
-    dispatch(getClassStudents(classID));
-  }, [dispatch, subjectID, classID]);
+    axios.get(`${BASE_URL}/api/teacher-assignments`, { withCredentials: true })
+      .then((r) => setAssignments(r.data.assignments || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  // Calculate the number of students and sessions
-  const numberOfStudents = sclassStudents && sclassStudents.length;
-  const numberOfSessions = subjectDetails && subjectDetails.sessions;
+  // Derive unique classes and subjects from assignments
+  const uniqueClasses  = [...new Map((assignments || []).map((a) => [a?.class?._id, a?.class]).filter(([k]) => k)).values()];
+  const uniqueSubjects = [...new Map((assignments || []).map((a) => [a?.subject?._id, a?.subject]).filter(([k]) => k)).values()];
+
+  const stats = [
+    { title: 'My Classes',   value: String(uniqueClasses.length),  icon: ClassOutlinedIcon, subtitle: 'Assigned to me',      trend: 0, trendUp: true,  colorIndex: 1 },
+    { title: 'My Subjects',  value: String(uniqueSubjects.length), icon: MenuBookIcon,       subtitle: 'Subjects I teach',    trend: 0, trendUp: true,  colorIndex: 0 },
+    { title: 'Assignments',  value: String(assignments.length),    icon: AssignmentIcon,     subtitle: 'Total assignments',   trend: 0, trendUp: true,  colorIndex: 2 },
+    { title: 'Mark Entry',   value: '—',                           icon: EditNoteIcon,       subtitle: 'Go to mark entry',    trend: 0, trendUp: false, colorIndex: 3 },
+  ];
 
   return (
-    <>
-      {/* Main container */}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={3} lg={3}>
-            <StyledPaper>
-              <img src={Students} alt="Students" />
-              <Title>Class Students</Title>
-              <Data start={0} end={numberOfStudents} duration={2.5} />
-            </StyledPaper>
+    <Box>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>
+          {greeting}, {firstName} 👋
+        </Typography>
+        <Typography sx={{ color: '#64748b', fontSize: '0.875rem', mt: 0.25 }}>
+          You have <strong style={{ color: '#0d9488' }}>{assignments.length}</strong> active teaching assignment{assignments.length !== 1 ? 's' : ''}.
+        </Typography>
+      </Box>
+
+      {/* Stats */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        {stats.map((s) => (
+          <Grid item xs={12} sm={6} lg={3} key={s.title}>
+            <StatCard {...s} />
           </Grid>
-          <Grid item xs={12} md={3} lg={3}>
-            <StyledPaper>
-              <img src={Lessons} alt="Lessons" />
-              <Title>Total Lessons</Title>
-              <Data start={0} end={numberOfSessions} duration={5} />
-            </StyledPaper>
-          </Grid>
-          <Grid item xs={12} md={3} lg={3}>
-            <StyledPaper>
-              <img src={Tests} alt="Tests" />
-              <Title>Tests Taken</Title>
-              <Data start={0} end={24} duration={4} />
-            </StyledPaper>
-          </Grid>
-          <Grid item xs={12} md={3} lg={3}>
-            <StyledPaper>
-              <img src={Time} alt="Time" />
-              <Title>Total Hours</Title>
-              <Data start={0} end={30} duration={4} suffix="hrs" />{" "}
-            </StyledPaper>
-          </Grid>
-          <Grid item xs={12}>
-            {/* Notice board */}
-            <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
-              {hasData ? (
-                <SeeNotice />
+        ))}
+      </Grid>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress sx={{ color: '#0d9488' }} />
+        </Box>
+      ) : (
+        <Grid container spacing={2.5}>
+          {/* My Classes */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #f1f5f9' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>My Classes</Typography>
+                <Chip label={`${uniqueClasses.length} classes`} size="small" sx={{ bgcolor: '#f0fdfa', color: '#0d9488', fontWeight: 700, fontSize: '0.7rem' }} />
+              </Box>
+              {uniqueClasses.length === 0 ? (
+                <Typography sx={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', py: 3 }}>
+                  No classes assigned yet.
+                </Typography>
               ) : (
-                <Box sx={{ textAlign: "center", mt: "40px" }}>
-                  <img
-                    src={addnotice}
-                    alt="No Data"
-                    style={{ maxWidth: "100%", maxHeight: "225px" }}
-                  />
-                  <Typography variant="h5" component="div" mt={0.5}>
-                    No Notice found
-                  </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {uniqueClasses.map((cls) => {
+                    const lc = LEVEL_COLORS[cls.level] || { bg: '#f1f5f9', color: '#64748b' };
+                    // subjects taught in this class
+                    const classSubjects = (assignments || [])
+                      .filter((a) => a?.class?._id === cls._id)
+                      .map((a) => a.subject?.name)
+                      .filter(Boolean);
+                    return (
+                      <Box key={cls._id} sx={{
+                        display: 'flex', alignItems: 'center', gap: 2, p: 1.5,
+                        borderRadius: 2, border: '1px solid #f1f5f9',
+                        '&:hover': { bgcolor: '#f8fafc', borderColor: '#0d9488' }, transition: 'all 0.15s',
+                      }}>
+                        <Avatar sx={{ width: 38, height: 38, borderRadius: 2, bgcolor: lc.bg, fontSize: '0.72rem', fontWeight: 800, color: lc.color }}>
+                          {cls.code || cls.name?.slice(0, 2)}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{cls.name}</Typography>
+                          <Typography sx={{ fontSize: '0.72rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {classSubjects.join(' · ') || '—'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ px: 1.2, py: 0.3, borderRadius: 99, bgcolor: lc.bg, flexShrink: 0 }}>
+                          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: lc.color }}>{cls.level}</Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })}
                 </Box>
               )}
             </Paper>
           </Grid>
+
+          {/* My Subjects + Quick Links */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #f1f5f9', mb: 2.5 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>My Subjects</Typography>
+                <Chip label={`${uniqueSubjects.length} subjects`} size="small" sx={{ bgcolor: '#f0fdf4', color: '#10b981', fontWeight: 700, fontSize: '0.7rem' }} />
+              </Box>
+              {uniqueSubjects.length === 0 ? (
+                <Typography sx={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', py: 3 }}>
+                  No subjects assigned yet.
+                </Typography>
+              ) : (
+                <List disablePadding>
+                  {uniqueSubjects.map((subj, i) => {
+                    const lc = LEVEL_COLORS[subj.level] || { bg: '#f1f5f9', color: '#64748b' };
+                    const inClasses = (assignments || [])
+                      .filter((a) => a?.subject?._id === subj._id)
+                      .map((a) => a.class?.name)
+                      .filter(Boolean);
+                    return (
+                      <React.Fragment key={subj._id}>
+                        <ListItem disablePadding sx={{ py: 1 }}>
+                          <ListItemAvatar sx={{ minWidth: 40 }}>
+                            <Avatar sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: lc.bg }}>
+                              <MenuBookIcon sx={{ fontSize: 15, color: lc.color }} />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={<Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>{subj.name}</Typography>}
+                            secondary={<Typography sx={{ fontSize: '0.7rem', color: '#94a3b8' }}>{inClasses.join(', ')}</Typography>}
+                          />
+                          {subj.level && (
+                            <Box sx={{ px: 1.2, py: 0.3, borderRadius: 99, bgcolor: lc.bg }}>
+                              <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: lc.color }}>{subj.level}</Typography>
+                            </Box>
+                          )}
+                        </ListItem>
+                        {i < uniqueSubjects.length - 1 && <Divider sx={{ borderColor: '#f8fafc' }} />}
+                      </React.Fragment>
+                    );
+                  })}
+                </List>
+              )}
+            </Paper>
+
+            {/* Quick Links */}
+            <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid #f1f5f9' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a', mb: 1.5 }}>Quick Links</Typography>
+              {[
+                { label: 'Assessments',  to: '/teacher/assessments', icon: AssignmentIcon },
+                { label: 'Mark Entry',   to: '/teacher/mark-entry',  icon: EditNoteIcon },
+                { label: 'Results',      to: '/teacher/results',     icon: TableChartIcon },
+                { label: 'Report Cards', to: '/teacher/reports',     icon: ArticleIcon },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Box key={item.label} component={Link} to={item.to} sx={{
+                    display: 'flex', alignItems: 'center', gap: 1.5, p: 1.25,
+                    borderRadius: 2, textDecoration: 'none', color: '#334155',
+                    '&:hover': { bgcolor: '#f0fdfa', color: '#0d9488' }, transition: 'all 0.15s', mb: 0.5,
+                  }}>
+                    <Icon sx={{ fontSize: 18, color: 'inherit' }} />
+                    <Typography sx={{ fontSize: '0.82rem', fontWeight: 600 }}>{item.label}</Typography>
+                    <ArrowForwardIcon sx={{ fontSize: 14, ml: 'auto', color: '#94a3b8' }} />
+                  </Box>
+                );
+              })}
+            </Paper>
+          </Grid>
         </Grid>
-      </Container>
-    </>
+      )}
+    </Box>
   );
 };
 
-// Styled components for styling
-const StyledPaper = styled(Paper)`
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  height: 200px;
-  justify-content: space-between;
-  align-items: center;
-  text-align: center;
-`;
-
-const Title = styled.p`
-  font-size: 1.25rem;
-`;
-
-const Data = styled(CountUp)`
-  font-size: calc(1.3rem + 0.6vw);
-  color: green;
-`;
-
-// Export the TeacherHomePage component
 export default TeacherHomePage;

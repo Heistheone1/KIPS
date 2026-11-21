@@ -64,7 +64,9 @@ const getSclassStudents = async (req, res) => {
         let students = await Student.find({ sclassName: req.params.id })
         if (students.length > 0) {
             let modifiedStudents = students.map((student) => {
-                return { ...student._doc, password: undefined };
+                const s = student.toObject ? student.toObject() : { ...student };
+                delete s.password;
+                return s;
             });
             res.send(modifiedStudents);
         } else {

@@ -1,0 +1,2 @@
+PostgreSQL connected
+KIPS-SMS backend running on port 5001 [development]

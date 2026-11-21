@@ -1,6 +1,7 @@
 * {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', 'Poppins', sans-serif;
   margin: 0;
+  box-sizing: border-box;
 }
 
 a {
@@ -8,16 +9,34 @@ a {
   color: inherit;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 ::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 :root {
-  --color-bg: #1f1f38;
-  --color-bg-variant: #2c2c6c;
-  --color-primary: #4db5ff;
-  --color-primary-variant: rgba(77, 181, 255, 0.4);
-  --color-light: rgba(255, 255, 255, 0.6);
+  --color-primary: #0d9488;
+  --color-primary-dark: #0f766e;
+  --color-bg: #f8fafc;
+  --color-white: #ffffff;
 }
 
 /* FORM */
@@ -27,16 +46,13 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* color: #ffffff; */
-  /* background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://images.unsplash.com/photo-1510936111840-65e151ad71bb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=890&q=80"); */
-  /* background-color: var(--color-bg);
-  background-size: cover;
-  background-blend-mode: darken; */
-  font-family: "Josefin Sans", sans-serif;
+  background-color: #f8fafc;
+  font-family: 'Inter', 'Poppins', sans-serif;
 }
 
 .registerTitle {
   font-size: 50px;
+  color: #0f172a;
 }
 
 .registerForm {
@@ -45,42 +61,43 @@ a {
   flex-direction: column;
 }
 
-.registerForm>label {
+.registerForm > label {
   margin: 10px 0;
-  color: rgb(0, 0, 0);
+  color: #0f172a;
+  font-weight: 600;
 }
 
 .registerInput {
-  padding: 10px;
+  padding: 12px;
   background-color: white;
-  border: none;
-  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  width: 100%;
 }
 
 .registerInput:focus {
   outline: none;
+  border-color: #0d9488;
 }
 
 .registerButton {
   margin-top: 20px;
   cursor: pointer;
-  background-color: #000000;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
   color: white;
-  padding: 10px;
+  padding: 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   text-align: center;
+  font-weight: 600;
+  width: 100%;
 }
 
 .registerButton:hover {
-  background-color: #313131;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
 }
 
 @media screen and (max-width: 480px) {
-  .register {
-    background-position: right;
-  }
-
   .registerInput {
     font-size: 15px;
     padding: 15px;
@@ -91,5 +108,64 @@ a {
     font-size: 16px;
     padding: 20px;
     border-radius: 12px;
+  }
+}
+
+/* ─── A4 Report card printing ──────────────────────────────────────────────
+   The printed PDF is rendered from the SAME #report-card-document DOM that
+   the screen shows, so the on-screen report and the PDF can never diverge
+   (single authoritative source). While printing we hide all app chrome and
+   lay the document out on an A4 page with sensible margins. */
+#report-card-document {
+  background: #ffffff;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm;
+  }
+
+  body.printing-report * {
+    visibility: hidden;
+  }
+  body.printing-report #report-card-document,
+  body.printing-report #report-card-document * {
+    visibility: visible;
+  }
+
+  body.printing-report #report-card-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 8mm 10mm;
+    box-shadow: none;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body.printing-report #report-card-document .MuiPaper-root {
+    box-shadow: none !important;
+  }
+
+  body.printing-report #report-card-document table {
+    page-break-inside: auto;
+    border-collapse: collapse;
+  }
+  body.printing-report #report-card-document tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  body.printing-report #report-card-document thead {
+    display: table-header-group;
+  }
+
+  /* hide all screen-only MUI elements */
+  body.printing-report .no-print,
+  body.printing-report .MuiChip-root,
+  body.printing-report .MuiAlert-root,
+  body.printing-report .MuiStack-root {
+    display: none !important;
   }
 }

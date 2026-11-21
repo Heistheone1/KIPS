@@ -17,7 +17,7 @@ export const getAllTeachers = (id) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Teachers/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/Teachers/${id}`
     );
     // Check if the response contains a message indicating an error
     if (result.data.message) {
@@ -36,7 +36,7 @@ export const getTeacherDetails = (id) => async (dispatch) => {
   // Try to make an asynchronous GET request to the specified URL
   try {
     const result = await axios.get(
-      `${process.env.REACT_APP_BASE_URL}/Teacher/${id}`
+      `${process.env.REACT_APP_BASE_URL}/api/Teacher/${id}`
     );
 
     // Dispatch doneSuccess with the retrieved data
@@ -55,7 +55,7 @@ export const updateTeachSubject =
     // Try to make an asynchronous PUT request to the specified URL
     try {
       await axios.put(
-        `${process.env.REACT_APP_BASE_URL}/TeacherSubject`,
+        `${process.env.REACT_APP_BASE_URL}/api/TeacherSubject`,
         { teacherId, teachSubject },
         {
           headers: { "Content-Type": "application/json" }, // Set the content type to JSON

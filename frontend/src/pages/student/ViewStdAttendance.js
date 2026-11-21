@@ -1,212 +1,215 @@
-import React, { useEffect, useState } from 'react'
-import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
-import { BottomNavigation, BottomNavigationAction, Box, Button, Collapse, Paper, Table, TableBody, TableHead, Typography } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getUserDetails } from '../../redux/userRelated/userHandle';
-import { calculateOverallAttendancePercentage, calculateSubjectAttendancePercentage, groupAttendanceBySubject } from '../../components/attendanceCalculator';
-
-import CustomBarChart from '../../components/CustomBarChart'
-
-import InsertChartIcon from '@mui/icons-material/InsertChart';
-import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
-import TableChartIcon from '@mui/icons-material/TableChart';
+import {
+  Box, Grid, Paper, Typography, Chip, LinearProgress, CircularProgress,
+  Collapse, IconButton, Table, TableBody, TableHead, TableRow, TableCell,
+  ToggleButtonGroup, ToggleButton, Avatar,
+} from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
-import { StyledTableCell, StyledTableRow } from '../../components/styles';
+import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import { getUserDetails } from '../../redux/userRelated/userHandle';
+import {
+  calculateOverallAttendancePercentage,
+  calculateSubjectAttendancePercentage,
+  groupAttendanceBySubject,
+} from '../../components/attendanceCalculator';
+import CustomBarChart from '../../components/CustomBarChart';
+import PageHeader from '../../components/PageHeader';
 
-// Define the ViewStdAttendance component
+const pctColor = (pct) => {
+  if (pct >= 80) return { color: '#16a34a', bg: '#dcfce7' };
+  if (pct >= 60) return { color: '#d97706', bg: '#fef3c7' };
+  return { color: '#dc2626', bg: '#fee2e2' };
+};
+
+const SubjectRow = ({ subName, present, sessions, allData }) => {
+  const [open, setOpen] = useState(false);
+  const pct = calculateSubjectAttendancePercentage(present, sessions);
+  const { color, bg } = pctColor(pct);
+
+  return (
+    <>
+      <TableRow sx={{ '&:hover': { bgcolor: '#f8fafc' } }}>
+        <TableCell sx={{ fontWeight: 600, color: '#0f172a', fontSize: '0.875rem' }}>{subName}</TableCell>
+        <TableCell sx={{ color: '#334155', fontSize: '0.875rem' }}>{present}</TableCell>
+        <TableCell sx={{ color: '#334155', fontSize: '0.875rem' }}>{sessions}</TableCell>
+        <TableCell>
+          <Chip label={`${pct}%`} size="small" sx={{ bgcolor: bg, color, fontWeight: 700, fontSize: '0.75rem' }} />
+        </TableCell>
+        <TableCell>
+          <IconButton size="small" onClick={() => setOpen((v) => !v)} sx={{ color: '#64748b' }}>
+            {open ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+          </IconButton>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={5} sx={{ p: 0, border: 0 }}>
+          <Collapse in={open} unmountOnExit>
+            <Box sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+              <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', mb: 1.5, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Attendance Records
+              </Typography>
+              <Grid container spacing={1}>
+                {allData.map((d, i) => {
+                  const date = new Date(d.date);
+                  const dateStr = date.toString() !== 'Invalid Date' ? date.toISOString().substring(0, 10) : 'Invalid Date';
+                  const present = d.status === 'Present';
+                  return (
+                    <Grid item key={i}>
+                      <Box sx={{
+                        px: 1.5, py: 0.75, borderRadius: 1.5,
+                        bgcolor: present ? '#dcfce7' : '#fee2e2',
+                        border: `1px solid ${present ? '#bbf7d0' : '#fecaca'}`,
+                      }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: present ? '#16a34a' : '#dc2626' }}>
+                          {dateStr}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.65rem', color: present ? '#16a34a' : '#dc2626', textAlign: 'center' }}>
+                          {d.status}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
+
 const ViewStdAttendance = () => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
+  const { userDetails, currentUser, loading } = useSelector((s) => s.user);
+  const [subjectAttendance, setSubjectAttendance] = useState([]);
+  const [view, setView] = useState('table');
 
-    // State to manage the open/close state of each subject's details
-    const [openStates, setOpenStates] = useState({});
+  useEffect(() => {
+    dispatch(getUserDetails(currentUser._id, 'Student'));
+  }, [dispatch, currentUser._id]);
 
-    // Function to handle the open/close state of a subject's details
-    const handleOpen = (subId) => {
-        setOpenStates((prevState) => ({
-            ...prevState,
-            [subId]: !prevState[subId],
-        }));
-    };
-    // Select data from the Redux store
-    const { userDetails, currentUser, loading, response, error } = useSelector((state) => state.user);
+  useEffect(() => {
+    if (userDetails) setSubjectAttendance(userDetails.attendance || []);
+  }, [userDetails]);
 
-    // Fetch user details on component mount and when dependencies change
-    useEffect(() => {
-        dispatch(getUserDetails(currentUser._id, "Student"));
-    }, [dispatch, currentUser._id]);
-
-    // Log response or error if they exist
-    if (response) { console.log(response) }
-    else if (error) { console.log(error) }
-
-    // State to manage subject attendance data
-    const [subjectAttendance, setSubjectAttendance] = useState([]);
-    const [selectedSection, setSelectedSection] = useState('table');
-
-    // Update subject attendance when userDetails change
-    useEffect(() => {
-        if (userDetails) {
-            setSubjectAttendance(userDetails.attendance || []);
-        }
-    }, [userDetails])
-
-    // Group attendance data by subject
-    const attendanceBySubject = groupAttendanceBySubject(subjectAttendance)
-
-    const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
-
-    const subjectData = Object.entries(attendanceBySubject).map(([subName, { subCode, present, sessions }]) => {
-        const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
-        return {
-            subject: subName,
-            attendancePercentage: subjectAttendancePercentage,
-            totalClasses: sessions,
-            attendedClasses: present
-        };
-    });
-
-    // Function to handle section change (table or chart)
-    const handleSectionChange = (event, newSection) => {
-        setSelectedSection(newSection);
-    };
-
-    const renderTableSection = () => {
-        // Render the table section
-        return (
-            <>
-                <Typography variant="h4" align="center" gutterBottom>
-                    Attendance
-                </Typography>
-                <Table>
-                    <TableHead>
-                        {/* Table header */}
-                        <StyledTableRow>
-                            <StyledTableCell>Subject</StyledTableCell>
-                            <StyledTableCell>Present</StyledTableCell>
-                            <StyledTableCell>Total Sessions</StyledTableCell>
-                            <StyledTableCell>Attendance Percentage</StyledTableCell>
-                            <StyledTableCell align="center">Actions</StyledTableCell>
-                        </StyledTableRow>
-                    </TableHead>
-                    {/* Map through attendanceBySubject to display each subject's attendance */}
-                    {Object.entries(attendanceBySubject).map(([subName, { present, allData, subId, sessions }], index) => {
-                        const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
-
-                        return (
-                            <TableBody key={index}>
-                                <StyledTableRow>
-                                    <StyledTableCell>{subName}</StyledTableCell>
-                                    <StyledTableCell>{present}</StyledTableCell>
-                                    <StyledTableCell>{sessions}</StyledTableCell>
-                                    <StyledTableCell>{subjectAttendancePercentage}%</StyledTableCell>
-                                    {/* Button to toggle the details of a subject */}
-                                    <StyledTableCell align="center">
-                                        <Button variant="contained"
-                                            onClick={() => handleOpen(subId)}>
-                                            {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}Details
-                                        </Button>
-                                    </StyledTableCell>
-                                </StyledTableRow>
-                                {/* Collapsible section to display detailed attendance for a subject */}
-                                <StyledTableRow>
-                                    <StyledTableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                                        <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
-                                            <Box sx={{ margin: 1 }}>
-                                                <Typography variant="h6" gutterBottom component="div">
-                                                    Attendance Details
-                                                </Typography>
-                                                <Table size="small" aria-label="purchases">
-                                                    {/* Table header for detailed attendance */}
-                                                    <TableHead>
-                                                        <StyledTableRow>
-                                                            <StyledTableCell>Date</StyledTableCell>
-                                                            <StyledTableCell align="right">Status</StyledTableCell>
-                                                        </StyledTableRow>
-                                                    </TableHead>
-                                                    <TableBody>
-                                                        {/* Map through allData to display each attendance record */}
-                                                        {allData.map((data, index) => {
-                                                            const date = new Date(data.date);
-                                                            const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
-                                                            return (
-                                                                <StyledTableRow key={index}>
-                                                                    <StyledTableCell component="th" scope="row">
-                                                                        {dateString}
-                                                                    </StyledTableCell>
-                                                                    <StyledTableCell align="right">{data.status}</StyledTableCell>
-                                                                </StyledTableRow>
-                                                            )
-                                                        })}
-                                                    </TableBody>
-                                                </Table>
-                                            </Box>
-                                        </Collapse>
-                                    </StyledTableCell>
-                                </StyledTableRow>
-                            </TableBody>
-                        )
-                    }
-                    )}
-                </Table>
-                {/* Display overall attendance percentage */}
-                <div>
-                    Overall Attendance Percentage: {overallAttendancePercentage.toFixed(2)}%
-                </div>
-            </>
-        )
-    }
-    // Function to render the chart section
-    const renderChartSection = () => {
-        return (
-            <>
-                <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
-            </>
-        )
-    };
-
+  if (loading) {
     return (
-        // Main container for the attendance view
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+        <CircularProgress sx={{ color: '#0d9488' }} />
+      </Box>
+    );
+  }
+
+  const hasData = subjectAttendance && subjectAttendance.length > 0;
+  const attendanceBySubject = groupAttendanceBySubject(subjectAttendance);
+  const overall = calculateOverallAttendancePercentage(subjectAttendance);
+  const { color: overallColor, bg: overallBg } = pctColor(overall);
+
+  const chartData = Object.entries(attendanceBySubject).map(([subName, { present, sessions }]) => ({
+    subject: subName,
+    attendancePercentage: calculateSubjectAttendancePercentage(present, sessions),
+    totalClasses: sessions,
+    attendedClasses: present,
+  }));
+
+  return (
+    <Box>
+      <PageHeader
+        title="My Attendance"
+        subtitle="Track your attendance across all subjects"
+        breadcrumb={[{ label: 'Dashboard', to: '/student/dashboard' }, { label: 'Attendance', active: true }]}
+      />
+
+      {hasData ? (
         <>
-            {/* Display loading message while data is being fetched */}
-            {loading
-                ? (
-                    <div>Loading...</div>
-                )
-                : // Check if subjectAttendance is available and has data
-                <div>
-                    {subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0 ?
-                        <>
-                            {selectedSection === 'table' && renderTableSection()}
-                            {selectedSection === 'chart' && renderChartSection()}
+          {/* Overall summary */}
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #f1f5f9', textAlign: 'center' }}>
+                <Box sx={{ position: 'relative', width: 80, height: 80, mx: 'auto', mb: 1.5 }}>
+                  <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+                    <circle cx="40" cy="40" r="34" fill="none" stroke={overallColor} strokeWidth="8"
+                      strokeDasharray={`${2 * Math.PI * 34}`}
+                      strokeDashoffset={`${2 * Math.PI * 34 * (1 - overall / 100)}`}
+                      strokeLinecap="round" transform="rotate(-90 40 40)" />
+                  </svg>
+                  <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: overallColor }}>{overall.toFixed(0)}%</Typography>
+                  </Box>
+                </Box>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>Overall Attendance</Typography>
+                <Chip label={overall >= 80 ? 'Good' : overall >= 60 ? 'Average' : 'Poor'} size="small"
+                  sx={{ mt: 0.75, bgcolor: overallBg, color: overallColor, fontWeight: 700, fontSize: '0.72rem' }} />
+              </Paper>
+            </Grid>
+            {[
+              { label: 'Subjects Tracked', value: Object.keys(attendanceBySubject).length, color: '#2563eb', bg: '#eff6ff' },
+              { label: 'Total Sessions', value: subjectAttendance.length, color: '#0d9488', bg: '#f0fdfa' },
+            ].map((s) => (
+              <Grid item xs={6} sm={4} key={s.label}>
+                <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #f1f5f9', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography sx={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value}</Typography>
+                  <Typography sx={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600, mt: 0.25 }}>{s.label}</Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
 
-                            <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-                                {/* Bottom navigation to switch between table and chart views */}
-                                <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
-                                    <BottomNavigationAction
-                                        label="Table"
-                                        value="table"
-                                        icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
-                                    />
-                                    <BottomNavigationAction
-                                        label="Chart"
-                                        value="chart"
-                                        icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
-                                    />
-                                </BottomNavigation>
-                            </Paper>
-                        </>
-                        :
-                        // If subjectAttendance is empty, display a message
-                        <>
-                            <Typography variant="h6" gutterBottom component="div">
-                                Currently You Have No Attendance Details
-                            </Typography>
-                        </>
-                    }
-                </div>
-            }
+          {/* View toggle */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <ToggleButtonGroup value={view} exclusive onChange={(_, v) => v && setView(v)} size="small">
+              <ToggleButton value="table" sx={{ px: 2, fontWeight: 600, fontSize: '0.8rem' }}>
+                <TableChartOutlinedIcon sx={{ fontSize: 16, mr: 0.75 }} /> Table
+              </ToggleButton>
+              <ToggleButton value="chart" sx={{ px: 2, fontWeight: 600, fontSize: '0.8rem' }}>
+                <InsertChartOutlinedIcon sx={{ fontSize: 16, mr: 0.75 }} /> Chart
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {view === 'table' ? (
+            <Paper sx={{ borderRadius: 3, border: '1px solid #f1f5f9', overflow: 'hidden' }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                    {['Subject', 'Present', 'Total Sessions', 'Attendance %', 'Details'].map((h) => (
+                      <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, py: 1.5 }}>
+                        {h}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.entries(attendanceBySubject).map(([subName, { present, allData, subId, sessions }]) => (
+                    <SubjectRow key={subId} subName={subName} present={present} sessions={sessions} allData={allData} />
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          ) : (
+            <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid #f1f5f9' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', mb: 2 }}>Attendance by Subject</Typography>
+              <CustomBarChart chartData={chartData} dataKey="attendancePercentage" />
+            </Paper>
+          )}
         </>
-    )
-}
+      ) : (
+        <Paper sx={{ p: 5, borderRadius: 3, border: '1px solid #f1f5f9', textAlign: 'center' }}>
+          <Avatar sx={{ width: 64, height: 64, bgcolor: '#f0fdfa', mx: 'auto', mb: 2 }}>
+            <EventAvailableIcon sx={{ fontSize: 32, color: '#0d9488' }} />
+          </Avatar>
+          <Typography sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a', mb: 1 }}>No attendance records yet</Typography>
+          <Typography sx={{ color: '#64748b', fontSize: '0.875rem' }}>Your attendance will appear here once your teacher starts marking.</Typography>
+        </Paper>
+      )}
+    </Box>
+  );
+};
 
-export default ViewStdAttendance
+export default ViewStdAttendance;

@@ -51,7 +51,7 @@ const AccountMenu = () => {
           >
             {/* Avatar component to display user's initial */}
             <Avatar sx={{ width: 32, height: 32 }}>
-              {String(currentUser.name).charAt(0)}
+              {currentUser?.firstName?.charAt(0) || '?'}
             </Avatar>
           </IconButton>
         </Tooltip>

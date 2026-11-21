@@ -1,79 +1,75 @@
-// Import necessary modules and components
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Paper, Box, Checkbox
-} from '@mui/material';
+import { Box, Typography, Avatar } from '@mui/material';
+import AnnouncementOutlinedIcon from '@mui/icons-material/AnnouncementOutlined';
 import { getAllComplains } from '../../../redux/complainRelated/complainHandle';
-import TableTemplate from '../../../components/TableTemplate';
+import PageLayout from '../../../components/academic/PageLayout';
 
-// Define the SeeComplains component
+const ACCENT = '#7c3aed';
+const ACCENT_BG = '#f5f3ff';
+
+const initials = (name) => name ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+
 const SeeComplains = () => {
-  // Initialize dispatch and get data from Redux store
   const dispatch = useDispatch();
-  const { complainsList, loading, error, response } = useSelector(state => state.complain);
-  const { currentUser } = useSelector(state => state.user);
+  const { complainsList, loading } = useSelector((s) => s.complain);
+  const { currentUser } = useSelector((s) => s.user);
 
-  // Fetch all complains when the component mounts
   useEffect(() => {
-    dispatch(getAllComplains(currentUser._id, "Complain"));
+    dispatch(getAllComplains(currentUser._id, 'Complain'));
   }, [currentUser._id, dispatch]);
 
-  // Log any errors to the console
-  if (error) {
-    console.error(error);
-  }
+  const rows = (complainsList || []).filter((c) => c && c.complaint);
 
-  // Define the columns for the complains table
-  const complainColumns = [
-    { id: 'user', label: 'User', minWidth: 170 },
-    { id: 'complaint', label: 'Complaint', minWidth: 100 },
-    { id: 'date', label: 'Date', minWidth: 170 },
+  const columns = [
+    {
+      key: 'user', label: 'Student',
+      render: (r) => {
+        const name = r.user?.name || r.user?.firstName
+          ? `${r.user.firstName || ''} ${r.user.lastName || ''}`.trim()
+          : '—';
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar sx={{ width: 34, height: 34, bgcolor: ACCENT_BG, color: ACCENT, fontSize: '0.75rem', fontWeight: 700 }}>
+              {initials(name)}
+            </Avatar>
+            <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}>{name}</Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      key: 'complaint', label: 'Complaint',
+      render: (r) => (
+        <Typography sx={{ fontSize: '0.82rem', color: '#64748b', maxWidth: 380, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {r.complaint || '—'}
+        </Typography>
+      ),
+    },
+    {
+      key: 'date', label: 'Date',
+      render: (r) => (
+        <Typography sx={{ fontSize: '0.82rem', color: '#334155' }}>
+          {r.date ? new Date(r.date).toISOString().slice(0, 10) : '—'}
+        </Typography>
+      ),
+    },
   ];
 
-  // Filter out invalid complaints before mapping
-  const validComplainsList = complainsList?.filter(complain => {
-    if (!complain || !complain.user || !complain.user.name) {
-      console.warn("Invalid complaint data:", complain);
-      return false; // Filter out this complaint
-    }
-    return true; // Keep valid complaints
-  });
-
-  // Map the valid complains data to the table rows format
-  const complainRows = validComplainsList?.map(complain => ({
-    user: complain.user.name,
-    complaint: complain.complaint || "No complaint provided",
-    date: complain.date ? new Date(complain.date).toISOString().substring(0, 10) : "Unknown Date",
-    id: complain._id || "No ID",
-  })) || []; // Ensure an empty array if validComplainsList is undefined
-
-  // Define a component for the button in each row of the table
-  const ComplainButtonHaver = () => <Checkbox inputProps={{ 'aria-label': 'Checkbox demo' }} />;
-
-  // Render the component
   return (
-    <>
-      {loading ? (
-        <div>Loading...</div>
-      ) : response ? (
-        /* Box to center the message */
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <div>
-            {/* Message to show when there are no complains */}
-            No Complains Right Now
-          </div>
-        </Box>
-      ) : (
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          {Array.isArray(complainsList) && complainsList.length > 0 && (
-            <TableTemplate buttonHaver={ComplainButtonHaver} columns={complainColumns} rows={complainRows} />
-          )}
-        </Paper>
-      )}
-    </>
+    <PageLayout
+      title="Complaints"
+      subtitle="Review complaints submitted by students"
+      icon={AnnouncementOutlinedIcon}
+      iconColor={ACCENT}
+      iconBg={ACCENT_BG}
+      canAdd={false}
+      columns={columns}
+      rows={rows}
+      loading={loading}
+      emptyMessage="No complaints submitted yet."
+    />
   );
 };
-  
-// Export the component
+
 export default SeeComplains;
